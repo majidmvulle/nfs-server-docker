@@ -1,0 +1,36 @@
+name: Create Tag on Merge to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+        contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Next Tag
+        id: get_next_tag
+        run: |
+          #Get next semantic tag version
+          latest_tag=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v1.0.0")
+          major=$(echo $latest_tag | cut -d. -f1 | sed 's/v//')
+          minor=$(echo $latest_tag | cut -d. -f2)
+          patch=$(echo $latest_tag | cut -d. -f3)
+          new_patch=$((patch + 1))
+          next_tag="v${major}.${minor}.${new_patch}"
+          echo "next_tag=$next_tag" >> $GITHUB_OUTPUT
+
+      - name: Create Tag
+        run: |
+          git tag ${{ steps.get_next_tag.outputs.next_tag }}
+          git push origin ${{ steps.get_next_tag.outputs.next_tag }}
