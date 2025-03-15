@@ -6,9 +6,7 @@ on:
 
 jobs:
   release:
-    if: ${{ github.event.registry_package.package_type == 'container' &&
-      github.event.registry_package.package_name == 'nfs-server-docker' &&
-      startsWith(github.event.registry_package.package_version.version, 'v') }}
+    if: ${{ startsWith(github.event.registry_package.package_version.version, 'v') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
