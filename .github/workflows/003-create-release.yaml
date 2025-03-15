@@ -1,12 +1,14 @@
 name: Create Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  registry_package:
+    types: [published]
 
 jobs:
   release:
+    if: ${{ github.event.registry_package.package_type == 'container' &&
+      github.event.registry_package.package_name == 'nfs-server-docker' &&
+      startsWith(github.event.registry_package.package_version.version, 'v') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -17,7 +19,8 @@ jobs:
 
       - name: Get tag name
         id: get_tag
-        run: echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: |
+          echo "tag_name=${{ github.event.registry_package.package_version.version }}" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -30,4 +33,4 @@ jobs:
             This is a release for version ${{ steps.get_tag.outputs.tag_name }} of the NFS server Docker image.
 
             Changes:
-            - ... (List your changes) ...
+            - NFS Server Docker image initial release

@@ -1,6 +1,6 @@
 # nfs-server-docker
 
-[![Build Status](https://github.com/majidmvulle/nfs-server-docker/actions/workflows/001-build-and-push-gcr.yaml/badge.svg)](https://github.com/majidmvulle/nfs-server-docker/actions/workflows/001-build-and-push-gcr.yaml)
+[![Build Status](https://github.com/majidmvulle/nfs-server-docker/actions/workflows/002-build-and-push-gcr.yaml/badge.svg)](https://github.com/majidmvulle/nfs-server-docker/actions/workflows/002-build-and-push-gcr.yaml)
 
 A simple Docker image for running an NFS server.  This image is based on Debian 12 and uses `nfs-kernel-server`.
 
