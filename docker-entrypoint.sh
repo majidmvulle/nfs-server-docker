@@ -1,41 +1,48 @@
 #!/bin/bash
 set -e
 
-configure_exports() {
-  echo "[nfs-server] Configuring NFS exports..."
-  if [ ! -f /etc/exports ]; then
-    touch /etc/exports
-  fi
+# --- Configuration via Environment Variables ---
 
-  if [ -f "/exports/exports" ]; then
-    echo "[nfs-server] Using custom exports file from /exports/exports"
-    cat /exports/exports > /etc/exports
-  else
-    echo "[nfs-server] Using default exports (exporting /exports to all)"
-    echo "/exports *(rw,sync,no_subtree_check,no_root_squash)" > /etc/exports
-  fi
+# Shared directory (optional, with defaults).
+SHARED_DIRECTORY="${SHARED_DIRECTORY:-/exports}"
 
-  exportfs -ra
+# Client network/IP/Hostname (REQUIRED).
+ALLOWED_CLIENT="${ALLOWED_CLIENT:-}"
+
+# NFS Options (optional, with defaults).
+NFS_OPTIONS="${NFS_OPTIONS:-rw,sync,no_subtree_check,no_root_squash}"
+
+# --- Helper Functions ---
+
+log() {
+  echo "[nfs-server] $@"
 }
 
-start_services() {
-  echo "[nfs-server] Starting rpcbind..."
-  /usr/sbin/rpcbind -w
+# --- Setup Exports ---
 
-  echo "[nfs-server] Starting nfs-kernel-server..."
-  if command -v systemctl &> /dev/null; then
-    systemctl start nfs-kernel-server
-    systemctl enable nfs-kernel-server
-  elif command -v service &> /dev/null; then
-    service nfs-kernel-server start
-  else
-    echo "No init system detected"
+log "Configuring NFS exports..."
+
+# Check if ALLOWED_CLIENT is set.  This is now REQUIRED.
+if [ -z "$ALLOWED_CLIENT" ]; then
+  log "Error: ALLOWED_CLIENT environment variable must be set."
+  exit 1
+fi
+
+# Create the /etc/exports file dynamically.
+cat > /etc/exports <<EOF
+$SHARED_DIRECTORY $ALLOWED_CLIENT($NFS_OPTIONS)
+EOF
+
+# Validate exports
+if ! exportfs -a; then
+    log "Error: Invalid exports configuration. Check your SHARED_DIRECTORY, ALLOWED_CLIENT, and NFS_OPTIONS."
     exit 1
-  fi
+fi
 
-  # Keep the container running
-  tail -f /dev/null
-}
+# --- Start Services ---
 
-configure_exports "$@"
-start_services
+log "Starting rpcbind..."
+/usr/sbin/rpcbind -w
+
+log "Starting nfs-kernel-server..."
+exec /etc/init.d/nfs-kernel-server start
