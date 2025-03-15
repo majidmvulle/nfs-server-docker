@@ -29,14 +29,14 @@ jobs:
 
       - name: Get Version
         id: get_version
+        shell: bash
         run: |
           # Triggered by workflow_run (tag creation from PR merge)
           if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            TAG_NAME=$(echo "${{ github.event.workflow_run.ref }}" | sed 's,refs/tags/,,' )
-            echo "version=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "version=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }} 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
           # Triggered by workflow_dispatch (manual build with specified tag)
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "version=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Login to GitHub Container Registry
@@ -53,7 +53,6 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/nfs-server-docker
           tags: |
             type=raw,value=${{ steps.get_version.outputs.version }}
-            type=sha,prefix=sha-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
