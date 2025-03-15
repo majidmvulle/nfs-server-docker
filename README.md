@@ -18,6 +18,7 @@ A simple Docker image for running an NFS server.  This image is based on Debian 
 ```shell
 docker run --name nfs-server \
     -v /path/to/your/data:/exports \
+    -e CLIENT_NETWORK=10.0.0.0/24 \
     -p 2049:2049 -p 20048:20048 \
     --cap-add SYS_ADMIN \
     nfs-server-docker
@@ -25,7 +26,6 @@ docker run --name nfs-server \
 
 ### Docker Compose
 ```shell
-version: "3.7"
 services:
   nfs-server:
     image: ghcr.io/majidmvulle/nfs-server-docker
