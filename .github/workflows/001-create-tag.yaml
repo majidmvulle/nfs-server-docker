@@ -1,7 +1,8 @@
 name: Create Tag on Merge to Main
 
 on:
-  push:
+  pull_request_target:
+    types: [closed]
     branches:
       - main
 
