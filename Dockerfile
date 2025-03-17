@@ -5,12 +5,12 @@ ARG NFS_VERSION=1:2.6.2-4+deb12u1
 RUN set -x && \
     apt update && apt install -y -qq openssl rpcbind nfs-common nfs-kernel-server=${NFS_VERSION}* && \
     rm -rf /var/lib/apt/lists/* && \
-    mkdir /exports
+    mkdir /nfs-server
 
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +rx /usr/local/bin/docker-entrypoint.sh
 
-VOLUME /exports
+VOLUME /nfs-server
 
 EXPOSE 2049/tcp
 EXPOSE 20048/tcp
