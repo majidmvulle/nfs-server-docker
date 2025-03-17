@@ -1,63 +1,52 @@
 #!/bin/bash
-# Based on: https://github.com/GoogleCloudPlatform/nfs-server-docker/blob/master/1/debian11/1.3/docker-entrypoint.sh
-
 set -e
 
-function start()
-{
-    # --- Use Environment Variables ---
-    SHARED_DIRECTORY="${SHARED_DIRECTORY:-/nfs-server}"
-    ALLOWED_CLIENT="${ALLOWED_CLIENT:-}"
-    NFS_OPTIONS="${NFS_OPTIONS:-rw,sync,no_subtree_check,no_root_squash,fsid=0}"
+# --- Configuration via Environment Variables ---
 
-    if [ -z "$ALLOWED_CLIENT" ]; then
-        echo "Error: ALLOWED_CLIENT environment variable must be set." >&2
-        exit 1
-    fi
+SHARED_DIRECTORY="${SHARED_DIRECTORY:-/nfs-server}"
+ALLOWED_CLIENT="${ALLOWED_CLIENT:-}"
+NFS_OPTIONS="${NFS_OPTIONS:-rw,sync,no_subtree_check,no_root_squash,fsid=0}"
 
-    # prepare /etc/exports
-    echo "$SHARED_DIRECTORY $ALLOWED_CLIENT($NFS_OPTIONS)" > /etc/exports
+# --- Helper Functions ---
 
-    echo "Serving $SHARED_DIRECTORY"
-
-    # start rpcbind if it is not started yet
-    /usr/sbin/rpcinfo 127.0.0.1 > /dev/null; s=$?
-    if [ $s -ne 0 ]; then
-       echo "Starting rpcbind"
-       /sbin/rpcbind -w
-    fi
-
-    mount -t nfsd nfds /proc/fs/nfsd
-
-    # -V 3: enable NFSv3
-    /usr/sbin/rpc.mountd -N 2 -V 3
-
-    /usr/sbin/exportfs -r
-    # -G 10 to reduce grace time to 10 seconds (the lowest allowed)
-    /usr/sbin/rpc.nfsd -G 10 -N 2 -V 3
-    /sbin/rpc.statd --no-notify
-    echo "NFS started"
+log() {
+  echo "[nfs-server] $@"
 }
 
-function stop()
-{
-    echo "Stopping NFS"
+# --- Setup Exports ---
 
-    /usr/sbin/rpc.nfsd 0
-    /usr/sbin/exportfs -au
-    /usr/sbin/exportfs -f
+log "Configuring NFS exports..."
 
-    kill "$(pidof rpc.mountd)"
-    umount /proc/fs/nfsd
-    echo > /etc/exports
-    exit 0
-}
+if [ -z "$ALLOWED_CLIENT" ]; then
+  log "Error: ALLOWED_CLIENT environment variable must be set."
+  exit 1
+fi
 
-trap stop TERM
+cat > /etc/exports <<EOF
+$SHARED_DIRECTORY $ALLOWED_CLIENT($NFS_OPTIONS)
+EOF
 
-start "$@"
+# Validate exports.  Do this *before* starting services.
+if ! exportfs -a; then
+    log "Error: Invalid exports configuration.  Check your SHARED_DIRECTORY, ALLOWED_CLIENT, and NFS_OPTIONS."
+    exit 1
+fi
 
-# Ugly hack to do nothing and wait for SIGTERM
+# --- Start Services ---
+
+log "Starting rpcbind..."
+/sbin/rpcbind -w # Start rpcbind, wait for it to initialize
+
+log "Starting NFS services..."
+mount -t nfsd nfds /proc/fs/nfsd
+/usr/sbin/rpc.mountd -N 2 -V 3  # Start mountd (part of nfs-utils)
+/usr/sbin/rpc.nfsd -G 10 -N 2 -V 3   # Start nfsd
+/sbin/rpc.statd --no-notify       # Start statd (for lock recovery)
+/usr/sbin/exportfs -r              # Refresh exports (important after starting services)
+
+log "NFS started"
+
+# Keep the container running
 while true; do
-    sleep 5
+    sleep 3600  # Sleep for a long time
 done
