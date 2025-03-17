@@ -38,15 +38,15 @@ log "Starting rpcbind..."
 /sbin/rpcbind -w # Start rpcbind, wait for it to initialize
 
 log "Starting NFS services..."
-mount -t nfsd nfds /proc/fs/nfsd
-/usr/sbin/rpc.mountd -V 3  # Start mountd (part of nfs-utils)
-/usr/sbin/rpc.nfsd -G 10 -V 3   # Start nfsd
-/sbin/rpc.statd --no-notify       # Start statd (for lock recovery)
-/usr/sbin/exportfs -r              # Refresh exports (important after starting services)
+mount -t nfsd nfds /proc/fs/nfsd  # Keep this - it's necessary
+/usr/sbin/rpc.mountd
+/usr/sbin/rpc.nfsd
+/sbin/rpc.statd --no-notify
+/usr/sbin/exportfs -r
 
 log "NFS started"
 
 # Keep the container running
 while true; do
-    sleep 3600  # Sleep for a long time
+    sleep 3600
 done
