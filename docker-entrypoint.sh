@@ -39,8 +39,8 @@ log "Starting rpcbind..."
 
 log "Starting NFS services..."
 mount -t nfsd nfds /proc/fs/nfsd
-/usr/sbin/rpc.mountd -N 2 -V 3  # Start mountd (part of nfs-utils)
-/usr/sbin/rpc.nfsd -G 10 -N 2 -V 3   # Start nfsd
+/usr/sbin/rpc.mountd -V 3  # Start mountd (part of nfs-utils)
+/usr/sbin/rpc.nfsd -G 10 -V 3   # Start nfsd
 /sbin/rpc.statd --no-notify       # Start statd (for lock recovery)
 /usr/sbin/exportfs -r              # Refresh exports (important after starting services)
 
