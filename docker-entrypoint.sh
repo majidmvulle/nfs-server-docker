@@ -48,5 +48,5 @@ log "NFS started"
 
 # Keep the container running
 while true; do
-    sleep 3600
+    sleep 5
 done
