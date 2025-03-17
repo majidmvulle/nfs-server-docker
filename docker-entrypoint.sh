@@ -38,7 +38,7 @@ log "Starting rpcbind..."
 /sbin/rpcbind -w # Start rpcbind, wait for it to initialize
 
 log "Starting NFS services..."
-mount -t nfsd nfds /proc/fs/nfsd  # Keep this - it's necessary
+mount -t nfsd nfds /proc/fs/nfsd
 /usr/sbin/rpc.mountd
 /usr/sbin/rpc.nfsd
 /sbin/rpc.statd --no-notify
